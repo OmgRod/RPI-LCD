@@ -407,6 +407,11 @@ if __name__ == "__main__":
     calib = load_calibration()
     if calib:
         logging.info("Loaded calibration matrix")
+    # Auto-fix common orientation quirks for specific touch rotation mounts
+    if TOUCH_ROTATION == 90:
+        logging.info("Applying auto-fix: swap virtual X/Y and invert virtual X for TOUCH_ROTATION=90")
+        SWAP_VIRTUAL_XY = True
+        INVERT_VIRTUAL_X = True
     # Detect mouse injection backend (xdotool for X11)
     mouse_backend = None
     if shutil.which('xdotool'):
@@ -431,11 +436,12 @@ if __name__ == "__main__":
 
     cursor_img = _make_cursor()
     # Precompute rotated cursor images so the arrow points correctly on-screen
+    # Use positive DISPLAY_ROTATION to rotate the cursor to match the framebuffer.
     cursor_variants = {
         0: cursor_img,
-        90: cursor_img.rotate(-90, expand=True),
-        180: cursor_img.rotate(-180, expand=True),
-        270: cursor_img.rotate(-270, expand=True),
+        90: cursor_img.rotate(DISPLAY_ROTATION, expand=True),
+        180: cursor_img.rotate(DISPLAY_ROTATION * 2 % 360, expand=True),
+        270: cursor_img.rotate(DISPLAY_ROTATION * 3 % 360, expand=True),
     }
 
     # Graceful shutdown handler for systemd (SIGTERM) and Ctrl-C (SIGINT)
