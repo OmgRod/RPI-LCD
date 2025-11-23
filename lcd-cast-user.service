@@ -1,0 +1,20 @@
+[Unit]
+Description=LCD Desktop Cast Service (User)
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/lcd/Python
+ExecStart=/usr/bin/python3 /home/pi/lcd/Python/main.py
+Restart=always
+RestartSec=5
+User=pi
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+# If you use Wayland set XDG_SESSION_TYPE=wayland
+# Environment=XDG_SESSION_TYPE=wayland
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

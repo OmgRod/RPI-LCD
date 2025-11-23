@@ -1,0 +1,14 @@
+[Unit]
+Description=Watch /home/pi/lcd/Python for changes and trigger lcd-cast.service
+
+[Path]
+PathModified=/home/pi/lcd/Python
+Unit=lcd-cast.service
+
+# Note: systemd path units do not support a `Recursive=` option. The
+# directory provided will be monitored by inotify for modifications.
+# If you prefer to watch only Python files, replace PathModified with
+# PathModified=/home/pi/lcd/Python/some_file.py or use PathExistsGlob.
+
+[Install]
+WantedBy=multi-user.target
