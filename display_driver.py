@@ -202,15 +202,24 @@ class DisplayDriver:
 
         pix = self.np.dstack((high, low)).flatten().tolist()
 
+        # Ensure backlight is on while updating the buffer
+        try:
+            self.bl.value = 1.0
+        except Exception:
+            pass
+
         self.command(0x36)
         self.data(self.MADCTL)
 
         self.set_windows(0,0,self.width-1, self.height-1)
         self.digital_write(self.dc, 1)
 
-        # burst write
-        for i in range(0, len(pix), 4096):
-            self.spi.writebytes(pix[i:i+4096])
+        # burst write; protect SPI writes from raising to keep main loop alive
+        try:
+            for i in range(0, len(pix), 4096):
+                self.spi.writebytes(pix[i:i+4096])
+        except Exception as e:
+            logging.error(f"SPI write failed during show_image: {e}")
 
     # -------------------------
     # Clear Screen

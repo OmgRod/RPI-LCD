@@ -8,6 +8,13 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/lcd/Python
 Environment=PYTHONUNBUFFERED=1
+# Load per-user GUI env if present (created by the user installer). This
+# helps the system service access the X/Wayland session DISPLAY and
+# XDG_RUNTIME_DIR so desktop capture works when running as root.
+EnvironmentFile=-/home/pi/.config/lcd-cast.env
+# Fallback defaults if the env file is missing
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=/usr/bin/python3 /home/pi/lcd/Python/main.py
 Restart=always
 RestartSec=2
