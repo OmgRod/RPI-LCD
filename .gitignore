@@ -2,3 +2,4 @@ __pycache__
 .venv
 .lgd-nfy0
 calibration.json
+test_tab_*.png
