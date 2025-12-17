@@ -21,7 +21,19 @@ DISPLAY_WIDTH = 320
 DISPLAY_HEIGHT = 480
 
 def main():
-    """Main entry point for the system monitoring display."""
+    """Main entry point for the system monitoring display.
+    
+    Initializes the LCD display and touch controller, creates a tabbed UI
+    for displaying system statistics, and enters the main event loop.
+    Handles touch input for tab navigation and updates the display with
+    real-time system information.
+    
+    Touch Navigation:
+        - Tap top of screen: switch to previous tab
+        - Tap bottom of screen: switch to next tab
+    
+    Gracefully handles SIGTERM and SIGINT signals for clean shutdown.
+    """
     
     # Initialize hardware
     disp = DisplayDriver()

@@ -267,11 +267,12 @@ class SystemMonitor:
     
     def format_bytes(self, bytes_value):
         """Format bytes to human-readable string."""
+        value = float(bytes_value)
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-            if bytes_value < 1024.0:
-                return f"{bytes_value:.1f}{unit}"
-            bytes_value /= 1024.0
-        return f"{bytes_value:.1f}PB"
+            if value < 1024.0:
+                return f"{value:.1f}{unit}"
+            value /= 1024.0
+        return f"{value:.1f}PB"
     
     def format_uptime(self, seconds):
         """Format uptime seconds to human-readable string."""

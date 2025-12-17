@@ -16,8 +16,17 @@ class Tab:
         self.name = name
         self.icon = icon
     
-    def render(self, monitor, width, height):
-        """Render this tab's content. Returns a PIL Image."""
+    def render(self, monitor: 'SystemMonitor', width: int, height: int) -> Image.Image:
+        """Render this tab's content.
+        
+        Args:
+            monitor: SystemMonitor instance to get system stats from
+            width: Width of the display in pixels
+            height: Height of the display in pixels
+            
+        Returns:
+            PIL Image containing the rendered tab content
+        """
         raise NotImplementedError()
 
 
@@ -158,6 +167,8 @@ class CPUTab(Tab):
         draw.text((10, y), "Per-Core Usage:", fill=(180, 180, 200), font=label_font)
         y += 25
         
+        # Filter to get only individual CPU cores (not the aggregate 'cpu' entry)
+        # and sort them numerically by core number
         cores = [(k, v) for k, v in cpu_usage.items() if k.startswith('cpu') and k != 'cpu']
         cores.sort(key=lambda x: x[0])
         
