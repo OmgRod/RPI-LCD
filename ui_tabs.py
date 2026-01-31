@@ -498,18 +498,17 @@ class TabManager:
     
     def render(self):
         """Render the current tab with tab indicators."""
-        # Get current tab content
         tab = self.tabs[self.current_tab]
+        # If screensaver tab, fill whole screen and skip menu bar
+        if tab.name == "Screensaver":
+            img = tab.render(self.monitor, self.width, self.height)
+            return img
+        # Otherwise, render with menu bar
         content_height = self.height - self.tab_indicator_height
         tab_img = tab.render(self.monitor, self.width, content_height)
-        
-        # Create final image with tab indicator
         img = Image.new('RGB', (self.width, self.height), (10, 10, 20))
         img.paste(tab_img, (0, 0))
-        
-        # Draw tab indicator at bottom
         self._draw_tab_indicator(img)
-        
         return img
     
     def _draw_tab_indicator(self, img):

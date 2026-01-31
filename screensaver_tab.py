@@ -8,21 +8,16 @@ class ScreensaverTab(Tab):
         self.last_pos = None
 
     def render(self, monitor, width, height):
-        img = Image.new('RGB', (width, height), (0, 0, 0))
+        img = Image.new('RGB', (width, height))
         draw = ImageDraw.Draw(img)
-        # Draw moving shapes/text to prevent burn-in
-        if self.last_pos is None:
-            self.last_pos = (random.randint(40, width-40), random.randint(40, height-40))
-        else:
-            # Move to a new random position
-            self.last_pos = (random.randint(40, width-40), random.randint(40, height-40))
-        x, y = self.last_pos
-        # Draw a circle
-        draw.ellipse([x-20, y-20, x+20, y+20], fill=(random.randint(50,255), random.randint(50,255), random.randint(50,255)))
-        # Draw text
-        try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
-        except Exception:
-            font = ImageFont.load_default()
-        draw.text((x, y), "Screensaver", fill=(255,255,255), font=font, anchor="mm")
+        # Fill the screen with random flashing colors
+        block_size = 40
+        for bx in range(0, width, block_size):
+            for by in range(0, height, block_size):
+                color = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255)
+                )
+                draw.rectangle([bx, by, bx + block_size, by + block_size], fill=color)
         return img
