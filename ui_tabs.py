@@ -449,12 +449,14 @@ class TabManager:
         self.monitor = SystemMonitor()
         
         # Create tabs
+        from screensaver_tab import ScreensaverTab
         self.tabs = [
             OverviewTab(),
             CPUTab(),
             MemoryTab(),
             StorageTab(),
             NetworkTab(),
+            ScreensaverTab(),
         ]
         
         self.current_tab = 0
@@ -476,6 +478,14 @@ class TabManager:
     
     def handle_touch(self, x, y):
         """Handle a touch event. Returns True if a tab switch occurred."""
+        # Check if touch is on a dot
+        if hasattr(self, '_dot_positions'):
+            for i, (dot_x, dot_y) in enumerate(self._dot_positions):
+                # Use radius 10 for easier tapping
+                if (x - dot_x) ** 2 + (y - dot_y) ** 2 <= 10 ** 2:
+                    self.current_tab = i
+                    logging.info(f"Switched to tab: {self.tabs[self.current_tab].name} via dot tap")
+                    return True
         # Top portion switches to previous tab
         if y < 60:
             self.previous_tab()
@@ -505,34 +515,29 @@ class TabManager:
     def _draw_tab_indicator(self, img):
         """Draw tab indicator showing current tab and navigation hints."""
         draw = ImageDraw.Draw(img)
-        
         y_start = self.height - self.tab_indicator_height
-        
         # Background for indicator
         draw.rectangle([0, y_start, self.width, self.height], fill=(30, 30, 40))
-        
         # Tab dots
         num_tabs = len(self.tabs)
         dot_spacing = min(40, self.width // (num_tabs + 1))
         start_x = (self.width - (num_tabs - 1) * dot_spacing) // 2
-        
+        self._dot_positions = []
         for i in range(num_tabs):
             x = start_x + i * dot_spacing
             y = y_start + self.tab_indicator_height // 2
-            
+            self._dot_positions.append((x, y))
             if i == self.current_tab:
                 # Current tab - larger filled circle
                 draw.ellipse([x - 6, y - 6, x + 6, y + 6], fill=(100, 150, 255))
             else:
                 # Other tabs - smaller hollow circle
                 draw.ellipse([x - 4, y - 4, x + 4, y + 4], outline=(100, 100, 120))
-        
         # Tab name
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12)
         except Exception:
             font = ImageFont.load_default()
-        
         tab_name = self.tabs[self.current_tab].name
         draw.text((self.width // 2, y_start + 5), tab_name, 
                  fill=(180, 180, 200), font=font, anchor="mt")
