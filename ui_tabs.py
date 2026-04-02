@@ -8,30 +8,7 @@ Handles rendering multiple tabs and touch-based navigation.
 import logging
 from PIL import Image, ImageDraw, ImageFont
 from system_monitor import SystemMonitor
-
-class Tab:
-    """Base class for a tab in the UI."""
-    
-    def __init__(self, name, icon=None):
-        self.name = name
-        self.icon = icon
-        self.full_screen = False
-    
-    def render(self, monitor: 'SystemMonitor', width: int, height: int) -> Image.Image:
-        """Render this tab's content.
-        
-        Args:
-            monitor: SystemMonitor instance to get system stats from
-            width: Width of the display in pixels
-            height: Height of the display in pixels
-            
-        Returns:
-            PIL Image containing the rendered tab content
-        """
-        raise NotImplementedError()
-
-    def close(self):
-        """Release tab-local resources if needed."""
+from tab_base import Tab
 
 
 

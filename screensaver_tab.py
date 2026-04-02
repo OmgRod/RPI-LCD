@@ -1,4 +1,4 @@
-from ui_tabs import Tab
+from tab_base import Tab
 from screensaver_animation import RandomSquareScreensaver
 
 class ScreensaverTab(Tab):

@@ -12,7 +12,7 @@ from collections import deque
 
 from PIL import Image, ImageDraw, ImageFont
 
-from ui_tabs import Tab
+from tab_base import Tab
 
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
