@@ -1,7 +1,7 @@
 import time
 import smbus
-from gpiozero import *
-import RPi.GPIO   
+import logging
+from gpiozero import DigitalOutputDevice, Button
 
 
 FT6336U_ADDRESS = 0x38
@@ -18,13 +18,24 @@ class TouchController():
     number of touch points and coordinates list similar to the original.
     """
     def __init__(self):
-        self.GPIO = RPi.GPIO
-        self.GPIO.setmode(self.GPIO.BCM)
-        self.GPIO.setwarnings(False)
-        # Initialize I2C
-        self.I2C = smbus.SMBus(1)
-        self.GPIO.setup(TP_RST, self.GPIO.OUT)
-        self.GPIO_TP_INT = Button(TP_INT)  # use gpiozero Button for interrupt input
+        try:
+            # Initialize I2C
+            self.I2C = smbus.SMBus(1)
+        except Exception as e:
+            logging.error("Failed to initialize I2C: %s", e)
+            logging.error("Ensure I2C is enabled: sudo raspi-config -> Interface Options -> I2C")
+            raise
+
+        try:
+            # Initialize GPIO using gpiozero (no root needed if user is in gpio group)
+            self.tp_rst = DigitalOutputDevice(TP_RST, active_high=True, initial_value=True)
+            self.tp_int = Button(TP_INT)
+        except Exception as e:
+            logging.error("Failed to initialize GPIO pins for touch controller: %s", e)
+            logging.error("Possible causes: insufficient permissions or pins already in use.")
+            logging.error("Try running as root or add your user to the gpio group:")
+            logging.error("  sudo usermod -aG gpio $USER")
+            raise
         
         self.coordinates = [{"x": 0, "y": 0} for _ in range(FT6336U_LCD_TOUCH_MAX_POINTS)]
         self.point_count = 0
@@ -35,9 +46,9 @@ class TouchController():
     
     def touch_rst(self):
         """Hardware reset for the touch controller."""
-        self.GPIO.output(TP_RST, 0)  
+        self.tp_rst.off()
         time.sleep(1 / 1000.0)
-        self.GPIO.output(TP_RST, 1)  
+        self.tp_rst.on()
         time.sleep(50 / 1000.0)
         
     def write_cmd(self, cmd):
