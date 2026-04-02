@@ -76,7 +76,7 @@ class TouchController():
             if buf:
                 for i in range(self.point_count):
                     # convert returned data to screen coordinates
-                    self.coordinates[i]["x"] = 319 - (((buf[(i * 6) + 0] & 0x0f) << 8) + buf[(i * 6) + 1])
+                    self.coordinates[i]["x"] = ((buf[(i * 6) + 0] & 0x0f) << 8) + buf[(i * 6) + 1]
                     self.coordinates[i]["y"] = ((buf[(i * 6) + 2] & 0x0f) << 8) + buf[(i * 6) + 3]
     
     def get_touch_xy(self):

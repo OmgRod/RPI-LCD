@@ -76,6 +76,7 @@ def main():
     # Initialize tab manager
     tab_manager = TabManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
     screensaver_tab_index = tab_manager.get_tab_index("Screensaver")
+    terminal_tab_index = tab_manager.get_tab_index("Terminal")
     touch_state = _reset_touch_state()
     screensaver_touch_state = _reset_screensaver_touch_state()
     
@@ -140,7 +141,10 @@ def main():
                                 touch_state["latched"] = True
                 else:
                     touch_state = _reset_touch_state()
-                if current_time - last_touch_time > screensaver_timeout:
+                if (
+                    tab_manager.current_tab != terminal_tab_index
+                    and current_time - last_touch_time > screensaver_timeout
+                ):
                     tab_manager.current_tab = screensaver_tab_index
                     touch_state = _reset_touch_state()
 

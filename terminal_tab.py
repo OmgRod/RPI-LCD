@@ -161,7 +161,7 @@ class TerminalTab(Tab):
         self._session = _ShellSession()
         self._font = None
         self._is_service_mode = not os.isatty(0)
-        self._service_message = "Running as service (no terminal stdin).\nTo use terminal: run interactively from shell."
+        self._service_message = "Service mode: read-only shell output"
 
     def close(self):
         self._session.close()
@@ -171,19 +171,6 @@ class TerminalTab(Tab):
         draw = ImageDraw.Draw(image)
 
         font = self._load_font()
-        
-        # If running as a service (no terminal), show a message
-        if self._is_service_mode:
-            try:
-                msg_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
-            except Exception:
-                msg_font = font
-            
-            draw.text((width // 2, height // 2 - 20), "Service Mode", 
-                     fill=(200, 100, 100), font=msg_font, anchor="mm")
-            draw.text((width // 2, height // 2 + 10), self._service_message, 
-                     fill=(150, 150, 170), font=font, anchor="mm", align="center")
-            return image
 
         char_bbox = font.getbbox("M")
         char_width = max(8, char_bbox[2] - char_bbox[0])
@@ -209,6 +196,9 @@ class TerminalTab(Tab):
 
         if not visible_lines:
             draw.text((left_padding, y), "Launching shell...", fill=(180, 190, 200), font=font)
+
+        if self._is_service_mode:
+            draw.text((left_padding, 2), self._service_message, fill=(170, 140, 120), font=font)
 
         return image
 
