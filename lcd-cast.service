@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/pi/lcd/Python
+WorkingDirectory=/home/pi/lcd-device-stats
 Environment=PYTHONUNBUFFERED=1
 # Run as root so the service can access GPIO, SPI, I2C, and the LCD device
 # nodes without relying on per-user device permissions.
@@ -13,7 +13,7 @@ EnvironmentFile=-/home/pi/.config/lcd-cast.env
 # Fallback defaults if the env file is missing
 Environment=DISPLAY=:0
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=/usr/bin/python3 /home/pi/lcd/Python/main.py
+ExecStart=/usr/bin/python3 /home/pi/lcd-device-stats/main.py
 Restart=always
 RestartSec=2
 KillMode=process

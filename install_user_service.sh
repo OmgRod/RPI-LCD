@@ -4,7 +4,7 @@ set -euo pipefail
 # Install and enable the lcd-cast user service for the current user.
 # Run this as the user who owns the desktop session (do NOT sudo).
 
-PROJ_DIR="$HOME/lcd/Python"
+PROJ_DIR="$HOME/lcd-device-stats"
 USER_SYS_DIR="$HOME/.config/systemd/user"
 ENV_FILE="$HOME/.config/lcd-cast.env"
 UNIT_SRC="$PROJ_DIR/lcd-cast-user.service"

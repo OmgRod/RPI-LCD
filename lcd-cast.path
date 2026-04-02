@@ -1,8 +1,8 @@
 [Unit]
-Description=Watch /home/pi/lcd/Python for changes and trigger lcd-cast.service
+Description=Watch /home/pi/lcd-device-stats for changes and trigger lcd-cast.service
 
 [Path]
-PathModified=/home/pi/lcd/Python
+PathModified=/home/pi/lcd-device-stats
 Unit=lcd-cast.service
 
 # Note: systemd path units do not support a `Recursive=` option. The

@@ -6,7 +6,7 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-PROJ_DIR="/home/pi/lcd/Python"
+PROJ_DIR="/home/pi/lcd-device-stats"
 SYSTEMD_DIR="/etc/systemd/system"
 
 echo "Installing systemd units from $PROJ_DIR to $SYSTEMD_DIR"
