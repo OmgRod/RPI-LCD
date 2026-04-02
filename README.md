@@ -64,6 +64,8 @@ sudo ./install_service.sh
 ```
 
 This will install and start a systemd service that runs the monitoring display.
+The system service runs as root so it can access the LCD, GPIO, SPI, and I2C devices reliably at boot.
+Use the per-user service only if you need desktop-session access for a capture-style setup.
 
 ## Testing
 

@@ -4,13 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
 WorkingDirectory=/home/pi/lcd/Python
 Environment=PYTHONUNBUFFERED=1
-# Load per-user GUI env if present (created by the user installer). This
-# helps the system service access the X/Wayland session DISPLAY and
-# XDG_RUNTIME_DIR so desktop capture works when running as root.
+# Run as root so the service can access GPIO, SPI, I2C, and the LCD device
+# nodes without relying on per-user device permissions.
+# If you are using the desktop-capture variant, prefer the per-user unit.
 EnvironmentFile=-/home/pi/.config/lcd-cast.env
 # Fallback defaults if the env file is missing
 Environment=DISPLAY=:0
