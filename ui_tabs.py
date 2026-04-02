@@ -524,7 +524,6 @@ class TabManager:
         dot_index = self.hit_test_dot(x, y)
         if dot_index is not None:
             return self.select_tab(dot_index)
-            return True
         return False
     
     def render(self):
