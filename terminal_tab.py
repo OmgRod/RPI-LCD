@@ -39,7 +39,7 @@ class _ShellSession:
         master_fd, slave_fd = pty.openpty()
         env = os.environ.copy()
         env.setdefault("TERM", "xterm-256color")
-        env.setdefault("PS1", "[\u@\h \W]$ ")
+        env.setdefault("PS1", r"[\u@\h \W]$ ")
 
         try:
             self._process = subprocess.Popen(
