@@ -6,6 +6,9 @@ A system monitoring display for Raspberry Pi with a 320x480 capacitive touchscre
 
 This application displays real-time system information on a vertical LCD display with multiple tabbed views:
 
+The screensaver tab now uses low-motion random squares with slow drift, darker colors, smooth transitions, capped frame pacing, and periodic reset pulses to reduce static panel stress during always-on use.
+Tab switching is now restricted to the bottom navigation dots, with a brief stable press required so stray touches do not flip tabs.
+
 ### Tabs
 
 1. **Overview** - System summary with CPU usage, temperature, memory, load average, and uptime
@@ -13,11 +16,14 @@ This application displays real-time system information on a vertical LCD display
 3. **Memory** - RAM and swap usage with detailed breakdowns
 4. **Storage** - Disk usage for all mounted filesystems
 5. **Network** - Network interface statistics with RX/TX data
+6. **Terminal** - Live shell tab with wrapped scrollback and monospace rendering
 
 ### Navigation
 
 - **Tap the top portion** of the screen (top ~60 pixels) to switch to the previous tab
-- **Tap the bottom portion** of the screen (bottom ~60 pixels) to switch to the next tab
+- **Tap and hold the bottom tab dots** to switch directly to a tab
+- Touches outside the dots do not change tabs
+- The terminal tab accepts keyboard input when the app is started from an interactive terminal or tmux session
 - The current tab is indicated by the filled dot in the tab indicator at the bottom
 
 ## Hardware
@@ -30,11 +36,13 @@ This application displays real-time system information on a vertical LCD display
 
 1. Clone this repository
 2. Install dependencies:
+
    ```bash
    pip3 install Pillow numpy spidev gpiozero RPi.GPIO smbus
    ```
 
 3. Enable SPI and I2C interfaces:
+
    ```bash
    sudo raspi-config
    # Navigate to: Interface Options -> SPI -> Enable
@@ -42,6 +50,7 @@ This application displays real-time system information on a vertical LCD display
    ```
 
 4. Run the monitoring display:
+
    ```bash
    sudo python3 main.py
    ```
@@ -61,7 +70,7 @@ This will install and start a systemd service that runs the monitoring display.
 You can test the UI rendering without hardware:
 
 ```bash
-python3 test_monitor.py
+python3 display_test.py
 ```
 
 This will generate PNG images of all tabs for visual verification.
@@ -71,17 +80,10 @@ This will generate PNG images of all tabs for visual verification.
 - `main.py` - Main application entry point
 - `system_monitor.py` - System statistics gathering module
 - `ui_tabs.py` - Tabbed UI system and tab implementations
+- `screensaver_animation.py` - Low-motion screensaver animation engine
+- `screensaver_tab.py` - Screensaver tab wrapper
 - `display_driver.py` - ST7796 LCD driver
 - `touch_controller.py` - FT6336U touch controller driver
-- `main_screenshare_backup.py` - Original screencasting implementation (backup)
-
-## Original Screencasting Version
-
-The original screencasting functionality (mirroring desktop to LCD) has been backed up to `main_screenshare_backup.py`. To restore it:
-
-```bash
-cp main_screenshare_backup.py main.py
-```
 
 ## License
 

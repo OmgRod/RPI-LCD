@@ -5,7 +5,6 @@ System monitoring display with tabbed UI.
 Displays device information (CPU, memory, storage, network) on the LCD.
 """
 
-import os
 import sys
 import time
 import logging
@@ -19,6 +18,33 @@ logging.basicConfig(level=logging.INFO)
 # Display is 320×480 in portrait orientation
 DISPLAY_WIDTH = 320
 DISPLAY_HEIGHT = 480
+TARGET_FPS = 45
+FRAME_INTERVAL = 1.0 / TARGET_FPS
+TAB_HOLD_SECONDS = 0.12
+
+
+def _read_touch(touch):
+    """Return the touch state and first touch point if present."""
+    touch.read_touch_data()
+    pressure, coordinates = touch.get_touch_xy()
+    if pressure == 0 or not coordinates:
+        return False, None
+    return True, coordinates[0]
+
+
+def _safe_enable_backlight(display):
+    try:
+        display.bl.value = 1.0
+    except Exception:
+        pass
+
+
+def _reset_touch_state():
+    return {
+        "active_dot": None,
+        "active_since": None,
+        "latched": False,
+    }
 
 def main():
     """Main entry point for the system monitoring display.
@@ -29,8 +55,9 @@ def main():
     real-time system information.
     
     Touch Navigation:
-        - Tap top of screen: switch to previous tab
-        - Tap bottom of screen: switch to next tab
+        - Tap and hold the bottom tab dots to switch tabs
+        - Touches outside the dots do not change tabs
+        - Any touch exits the screensaver back to the first tab
     
     Gracefully handles SIGTERM and SIGINT signals for clean shutdown.
     """
@@ -41,11 +68,14 @@ def main():
     
     # Initialize tab manager
     tab_manager = TabManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
+    screensaver_tab_index = tab_manager.get_tab_index("Screensaver")
+    touch_state = _reset_touch_state()
     
     # Graceful shutdown handler
     def cleanup(signum, frame):
         logging.info(f"Signal {signum} received, cleaning up and exiting")
         try:
+            tab_manager.shutdown()
             disp.clear()
         except Exception as e:
             logging.debug(f"Error clearing display during shutdown: {e}")
@@ -55,52 +85,57 @@ def main():
     signal.signal(signal.SIGINT, cleanup)
     
     # Touch state tracking
-    last_touch_time = time.time()
-    touch_debounce = 0.3  # seconds
+    last_touch_time = time.monotonic()
+    touch_debounce = 0.08  # seconds
     screensaver_timeout = 60  # seconds of inactivity before screensaver
-    screensaver_tab_index = len(tab_manager.tabs) - 1
     
     logging.info("System monitoring display started")
     
     # Main loop
     while True:
+        loop_start = time.monotonic()
         try:
-            # Read touch input
-            touch.read_touch_data()
-            p, coords = touch.get_touch_xy()
-            touched = (p != 0 and coords)
-            current_time = time.time()
-            # Screensaver logic
+            touched, touch_point = _read_touch(touch)
+            current_time = time.monotonic()
+
             if tab_manager.current_tab == screensaver_tab_index:
-                # If in screensaver, any touch returns to tab 0
                 if touched:
                     tab_manager.current_tab = 0
                     last_touch_time = current_time
+                    touch_state = _reset_touch_state()
             else:
                 if touched:
-                    # Debounce touch events to prevent rapid switching
                     if current_time - last_touch_time > touch_debounce:
-                        hwx = coords[0]['x']
-                        hwy = coords[0]['y']
-                        logging.debug(f"Touch detected at hw=({hwx},{hwy})")
-                        # Handle touch for tab switching
-                        if tab_manager.handle_touch(hwx, hwy):
-                            last_touch_time = current_time
-                # If inactive, switch to screensaver
+                        hwx = touch_point['x']
+                        hwy = touch_point['y']
+                        dot_index = tab_manager.hit_test_dot(hwx, hwy)
+
+                        if dot_index is None:
+                            touch_state = _reset_touch_state()
+                        else:
+                            if touch_state["active_dot"] != dot_index:
+                                touch_state["active_dot"] = dot_index
+                                touch_state["active_since"] = current_time
+                                touch_state["latched"] = False
+                            elif not touch_state["latched"] and current_time - touch_state["active_since"] >= TAB_HOLD_SECONDS:
+                                if tab_manager.select_tab(dot_index):
+                                    last_touch_time = current_time
+                                touch_state["latched"] = True
+                else:
+                    touch_state = _reset_touch_state()
                 if current_time - last_touch_time > screensaver_timeout:
                     tab_manager.current_tab = screensaver_tab_index
-            # Render current tab
+                    touch_state = _reset_touch_state()
+
             frame = tab_manager.render()
-            # Display frame
-            try:
-                disp.bl.value = 1.0  # Ensure backlight is on
-            except Exception:
-                pass
+            _safe_enable_backlight(disp)
             disp.show_image(frame)
         except Exception as e:
             logging.error(f"Error in main loop: {e}")
-        # Update rate: ~10 FPS (system stats don't need high refresh rate)
-        time.sleep(0.1)
+
+        elapsed = time.monotonic() - loop_start
+        if elapsed < FRAME_INTERVAL:
+            time.sleep(FRAME_INTERVAL - elapsed)
 
 
 if __name__ == "__main__":

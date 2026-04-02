@@ -15,6 +15,7 @@ class Tab:
     def __init__(self, name, icon=None):
         self.name = name
         self.icon = icon
+        self.full_screen = False
     
     def render(self, monitor: 'SystemMonitor', width: int, height: int) -> Image.Image:
         """Render this tab's content.
@@ -28,6 +29,10 @@ class Tab:
             PIL Image containing the rendered tab content
         """
         raise NotImplementedError()
+
+    def close(self):
+        """Release tab-local resources if needed."""
+
 
 
 class OverviewTab(Tab):
@@ -450,17 +455,37 @@ class TabManager:
         
         # Create tabs
         from screensaver_tab import ScreensaverTab
+        from terminal_tab import TerminalTab
         self.tabs = [
             OverviewTab(),
             CPUTab(),
             MemoryTab(),
             StorageTab(),
             NetworkTab(),
+            TerminalTab(),
             ScreensaverTab(),
         ]
         
         self.current_tab = 0
-        self.tab_indicator_height = 30
+        self.tab_indicator_height = 36
+        self.dot_hit_radius = 16
+
+    def shutdown(self):
+        """Close tabs that hold background resources."""
+        for tab in self.tabs:
+            close = getattr(tab, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:
+                    logging.debug(f"Failed to close tab: {tab.name}")
+
+    def get_tab_index(self, tab_name):
+        """Return the index of the first tab with the given name."""
+        for index, tab in enumerate(self.tabs):
+            if tab.name == tab_name:
+                return index
+        raise ValueError(f"Tab not found: {tab_name}")
         
     def get_current_tab(self):
         """Get the currently active tab."""
@@ -475,32 +500,38 @@ class TabManager:
         """Switch to the previous tab."""
         self.current_tab = (self.current_tab - 1) % len(self.tabs)
         logging.info(f"Switched to tab: {self.tabs[self.current_tab].name}")
+
+    def hit_test_dot(self, x, y):
+        """Return the dot index if the touch hits a navigation dot."""
+        if not hasattr(self, '_dot_positions'):
+            return None
+
+        for index, (dot_x, dot_y) in enumerate(self._dot_positions):
+            if (x - dot_x) ** 2 + (y - dot_y) ** 2 <= self.dot_hit_radius ** 2:
+                return index
+        return None
+
+    def select_tab(self, index):
+        """Select a tab directly by index."""
+        if index < 0 or index >= len(self.tabs):
+            return False
+        self.current_tab = index
+        logging.info(f"Switched to tab: {self.tabs[self.current_tab].name}")
+        return True
     
     def handle_touch(self, x, y):
-        """Handle a touch event. Returns True if a tab switch occurred."""
-        # Check if touch is on a dot
-        if hasattr(self, '_dot_positions'):
-            for i, (dot_x, dot_y) in enumerate(self._dot_positions):
-                # Use radius 10 for easier tapping
-                if (x - dot_x) ** 2 + (y - dot_y) ** 2 <= 10 ** 2:
-                    self.current_tab = i
-                    logging.info(f"Switched to tab: {self.tabs[self.current_tab].name} via dot tap")
-                    return True
-        # Top portion switches to previous tab
-        if y < 60:
-            self.previous_tab()
-            return True
-        # Bottom portion switches to next tab
-        elif y > self.height - 60:
-            self.next_tab()
+        """Handle a touch event. Returns True if a dot switch occurred."""
+        dot_index = self.hit_test_dot(x, y)
+        if dot_index is not None:
+            return self.select_tab(dot_index)
             return True
         return False
     
     def render(self):
         """Render the current tab with tab indicators."""
         tab = self.tabs[self.current_tab]
-        # If screensaver tab, fill whole screen and skip menu bar
-        if tab.name == "Screensaver":
+        # Full-screen tabs skip the tab strip.
+        if tab.full_screen:
             img = tab.render(self.monitor, self.width, self.height)
             return img
         # Otherwise, render with menu bar
@@ -519,7 +550,7 @@ class TabManager:
         draw.rectangle([0, y_start, self.width, self.height], fill=(30, 30, 40))
         # Tab dots
         num_tabs = len(self.tabs)
-        dot_spacing = min(40, self.width // (num_tabs + 1))
+        dot_spacing = min(42, self.width // (num_tabs + 1))
         start_x = (self.width - (num_tabs - 1) * dot_spacing) // 2
         self._dot_positions = []
         for i in range(num_tabs):
@@ -528,15 +559,15 @@ class TabManager:
             self._dot_positions.append((x, y))
             if i == self.current_tab:
                 # Current tab - larger filled circle
-                draw.ellipse([x - 6, y - 6, x + 6, y + 6], fill=(100, 150, 255))
+                draw.ellipse([x - 8, y - 8, x + 8, y + 8], fill=(100, 150, 255))
             else:
                 # Other tabs - smaller hollow circle
-                draw.ellipse([x - 4, y - 4, x + 4, y + 4], outline=(100, 100, 120))
+                draw.ellipse([x - 6, y - 6, x + 6, y + 6], outline=(100, 100, 120))
         # Tab name
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12)
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)
         except Exception:
             font = ImageFont.load_default()
         tab_name = self.tabs[self.current_tab].name
-        draw.text((self.width // 2, y_start + 5), tab_name, 
+        draw.text((self.width // 2, y_start + 4), tab_name, 
                  fill=(180, 180, 200), font=font, anchor="mt")
