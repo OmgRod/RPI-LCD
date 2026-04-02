@@ -9,6 +9,8 @@ USER_SYS_DIR="$HOME/.config/systemd/user"
 ENV_FILE="$HOME/.config/lcd-cast.env"
 UNIT_SRC="$PROJ_DIR/lcd-cast-user.service"
 UNIT_DST="$USER_SYS_DIR/lcd-cast.service"
+BIN_DIR="$HOME/.local/bin"
+BIN_PATH="$BIN_DIR/activate-lcd-terminal"
 
 mkdir -p "$USER_SYS_DIR"
 mkdir -p "$(dirname "$ENV_FILE")"
@@ -29,6 +31,13 @@ fi
 # Copy the unit into the user's systemd directory
 cp "$UNIT_SRC" "$UNIT_DST"
 
+mkdir -p "$BIN_DIR"
+cat > "$BIN_PATH" << EOF
+#!/bin/bash
+exec /usr/bin/python3 "$PROJ_DIR/activate_lcd_terminal.py" "\$@"
+EOF
+chmod 755 "$BIN_PATH"
+
 # Reload user daemon and enable
 systemctl --user daemon-reload
 systemctl --user enable --now lcd-cast.service
@@ -45,4 +54,8 @@ To stop/remove the unit:
   systemctl --user disable --now lcd-cast.service
   rm "$UNIT_DST"
   rm "$ENV_FILE"
+
+Keyboard bridge command installed at:
+  $BIN_PATH
+If not already present in PATH, add ~/.local/bin to PATH.
 EOF

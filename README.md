@@ -17,9 +17,10 @@ Tab switching is now restricted to the bottom navigation dots, with a brief stab
 4. **Storage** - Disk usage for all mounted filesystems
 5. **Network** - Network interface statistics with RX/TX data
 6. **Terminal** - Live shell tab with wrapped scrollback and monospace rendering
-   - **Note:** This tab only accepts keyboard input when the app is run interactively from a terminal (not when running as a systemd service)
-   - To use the terminal tab, run the app directly: `sudo python3 main.py`
-   - When running as a service, the terminal tab shows a status message
+   - Works in both interactive and systemd service modes
+   - In service mode, type into the LCD shell from any local terminal with: `activate-lcd-terminal`
+   - `Ctrl+C` sends interrupt to the LCD shell and exits the bridge command
+   - `Ctrl+D` exits the bridge command
 
 ### Navigation
 
@@ -68,6 +69,9 @@ sudo ./install_service.sh
 This will install and start a systemd service that runs the monitoring display.
 The system service runs as root so it can access the LCD, GPIO, SPI, and I2C devices reliably at boot.
 Use the per-user service only if you need desktop-session access for a capture-style setup.
+
+The installer also creates `/usr/local/bin/activate-lcd-terminal` so you can send keyboard input
+to the Terminal tab while the app is running as a service.
 
 ## Testing
 

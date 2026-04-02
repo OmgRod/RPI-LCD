@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import select
+import socket
 import subprocess
 import threading
 from collections import deque
@@ -15,6 +16,7 @@ from ui_tabs import Tab
 
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+INPUT_SOCKET_PATH = os.environ.get("LCD_TERMINAL_SOCKET", "/tmp/lcd-terminal.sock")
 
 
 class _ShellSession:
@@ -27,6 +29,8 @@ class _ShellSession:
         self._stdin_restore = None
         self._reader_thread = None
         self._stdin_thread = None
+        self._socket_thread = None
+        self._socket_server = None
         self._start_shell()
 
     def _start_shell(self):
@@ -60,6 +64,47 @@ class _ShellSession:
         self._reader_thread = threading.Thread(target=self._read_loop, daemon=True)
         self._reader_thread.start()
         self._start_keyboard_reader()
+        self._start_socket_bridge()
+
+    def _start_socket_bridge(self):
+        socket_dir = os.path.dirname(INPUT_SOCKET_PATH)
+        if socket_dir:
+            os.makedirs(socket_dir, exist_ok=True)
+
+        try:
+            if os.path.exists(INPUT_SOCKET_PATH):
+                os.unlink(INPUT_SOCKET_PATH)
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(INPUT_SOCKET_PATH)
+            os.chmod(INPUT_SOCKET_PATH, 0o666)
+            server.listen(4)
+            server.settimeout(0.5)
+            self._socket_server = server
+        except Exception:
+            self._socket_server = None
+            return
+
+        self._socket_thread = threading.Thread(target=self._socket_loop, daemon=True)
+        self._socket_thread.start()
+
+    def _socket_loop(self):
+        while not self._stop_event.is_set() and self._socket_server is not None:
+            try:
+                conn, _ = self._socket_server.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+
+            with conn:
+                while not self._stop_event.is_set():
+                    try:
+                        data = conn.recv(4096)
+                    except OSError:
+                        break
+                    if not data:
+                        break
+                    self.send_bytes(data)
 
     def _start_keyboard_reader(self):
         if not os.isatty(0):
@@ -130,6 +175,17 @@ class _ShellSession:
 
     def close(self):
         self._stop_event.set()
+        if self._socket_server is not None:
+            try:
+                self._socket_server.close()
+            except OSError:
+                pass
+            self._socket_server = None
+        if os.path.exists(INPUT_SOCKET_PATH):
+            try:
+                os.unlink(INPUT_SOCKET_PATH)
+            except OSError:
+                pass
         if self._stdin_restore is not None:
             try:
                 termios_module, settings = self._stdin_restore
@@ -161,7 +217,7 @@ class TerminalTab(Tab):
         self._session = _ShellSession()
         self._font = None
         self._is_service_mode = not os.isatty(0)
-        self._service_message = "Service mode: read-only shell output"
+        self._service_message = "Service mode: run activate-lcd-terminal to type"
 
     def close(self):
         self._session.close()

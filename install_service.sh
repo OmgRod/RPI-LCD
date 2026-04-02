@@ -8,10 +8,17 @@ fi
 
 PROJ_DIR="/home/pi/lcd-device-stats"
 SYSTEMD_DIR="/etc/systemd/system"
+BIN_PATH="/usr/local/bin/activate-lcd-terminal"
 
 echo "Installing systemd units from $PROJ_DIR to $SYSTEMD_DIR"
 cp "$PROJ_DIR/lcd-cast.service" "$SYSTEMD_DIR/"
 cp "$PROJ_DIR/lcd-cast.path" "$SYSTEMD_DIR/"
+
+cat > "$BIN_PATH" << 'EOF'
+#!/bin/bash
+exec /usr/bin/python3 /home/pi/lcd-device-stats/activate_lcd_terminal.py "$@"
+EOF
+chmod 755 "$BIN_PATH"
 
 # If a per-user service exists, note it as an alternative for desktop-capture setups.
 if [ -f "$PROJ_DIR/install_user_service.sh" ]; then
@@ -32,4 +39,5 @@ else
 fi
 
 echo "Installed and started lcd-cast.service and lcd-cast.path"
+echo "Installed keyboard bridge command: activate-lcd-terminal"
 echo "Check status with: sudo systemctl status lcd-cast.service"
