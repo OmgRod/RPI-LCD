@@ -557,11 +557,11 @@ class TabManager:
             y = y_start + self.tab_indicator_height // 2
             self._dot_positions.append((x, y))
             if i == self.current_tab:
-                # Current tab - larger filled circle
-                draw.ellipse([x - 8, y - 8, x + 8, y + 8], fill=(100, 150, 255))
+                # Current tab - larger filled blue circle
+                draw.ellipse([x - 8, y - 8, x + 8, y + 8], fill=(100, 150, 255), width=0)
             else:
-                # Other tabs - smaller hollow circle
-                draw.ellipse([x - 6, y - 6, x + 6, y + 6], outline=(100, 100, 120))
+                # Other tabs - filled gray circle with outlined style
+                draw.ellipse([x - 5, y - 5, x + 5, y + 5], fill=(60, 65, 75), width=0)
         # Tab name
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)

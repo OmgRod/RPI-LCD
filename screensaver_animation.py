@@ -51,10 +51,13 @@ class RandomSquareScreensaver:
         self._cells: dict[tuple[int, int], SquareCell] = {}
         self._grid_size: tuple[int, int] | None = None
 
-        self._drift_x_phase = random.random() * math.tau
-        self._drift_y_phase = random.random() * math.tau
-        self._drift_x_speed = random.uniform(0.12, 0.25)
-        self._drift_y_speed = random.uniform(0.10, 0.23)
+        # Velocity-based directional drift (replaces oscillation)
+        self._drift_offset_x = 0.0
+        self._drift_offset_y = 0.0
+        self._drift_velocity_x = random.uniform(-0.5, 0.5)
+        self._drift_velocity_y = random.uniform(-0.5, 0.5)
+        self._direction_change_time = time.time()
+        self._direction_change_interval = random.uniform(4.0, 8.0)
 
         self._next_reset_at = 0.0
         self._reset_started_at = 0.0
@@ -68,13 +71,29 @@ class RandomSquareScreensaver:
         self._last_render_at = now
         self._ensure_grid(width, height, now)
 
+        # Update drift direction periodically
+        if time.time() - self._direction_change_time >= self._direction_change_interval:
+            self._direction_change_time = time.time()
+            self._direction_change_interval = random.uniform(4.0, 8.0)
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(0.3, 0.8)
+            self._drift_velocity_x = speed * math.cos(angle)
+            self._drift_velocity_y = speed * math.sin(angle)
+
+        # Update drift offset with velocity
+        self._drift_offset_x += self._drift_velocity_x
+        self._drift_offset_y += self._drift_velocity_y
+
+        # Clamp drift within reasonable bounds
+        max_drift = 15
+        self._drift_offset_x = max(-max_drift, min(max_drift, self._drift_offset_x))
+        self._drift_offset_y = max(-max_drift, min(max_drift, self._drift_offset_y))
+
         image = Image.new("RGB", (width, height), (0, 0, 0))
         draw = ImageDraw.Draw(image)
 
-        drift_x = int(round(math.sin(self._drift_x_phase) * self.max_drift_pixels))
-        drift_y = int(round(math.cos(self._drift_y_phase) * self.max_drift_pixels))
-        self._drift_x_phase += self._drift_x_speed * delta
-        self._drift_y_phase += self._drift_y_speed * delta
+        drift_x = int(self._drift_offset_x)
+        drift_y = int(self._drift_offset_y)
 
         for (col, row), cell in self._cells.items():
             self._update_cell(cell, now)

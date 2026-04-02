@@ -17,14 +17,16 @@ Tab switching is now restricted to the bottom navigation dots, with a brief stab
 4. **Storage** - Disk usage for all mounted filesystems
 5. **Network** - Network interface statistics with RX/TX data
 6. **Terminal** - Live shell tab with wrapped scrollback and monospace rendering
+   - **Note:** This tab only accepts keyboard input when the app is run interactively from a terminal (not when running as a systemd service)
+   - To use the terminal tab, run the app directly: `sudo python3 main.py`
+   - When running as a service, the terminal tab shows a status message
 
 ### Navigation
 
 - **Tap the top portion** of the screen (top ~60 pixels) to switch to the previous tab
 - **Tap and hold the bottom tab dots** to switch directly to a tab
+- The current tab is shown as a larger **blue dot**; other tabs appear as smaller **gray dots**
 - Touches outside the dots do not change tabs
-- The terminal tab accepts keyboard input when the app is started from an interactive terminal or tmux session
-- The current tab is indicated by the filled dot in the tab indicator at the bottom
 
 ## Hardware
 

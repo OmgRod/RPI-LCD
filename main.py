@@ -21,6 +21,7 @@ DISPLAY_HEIGHT = 480
 TARGET_FPS = 45
 FRAME_INTERVAL = 1.0 / TARGET_FPS
 TAB_HOLD_SECONDS = 0.12
+SCREENSAVER_EXIT_HOLD_SECONDS = 3.0
 
 
 def _read_touch(touch):
@@ -44,6 +45,12 @@ def _reset_touch_state():
         "active_dot": None,
         "active_since": None,
         "latched": False,
+    }
+
+
+def _reset_screensaver_touch_state():
+    return {
+        "touched_at": None,
     }
 
 def main():
@@ -70,6 +77,7 @@ def main():
     tab_manager = TabManager(DISPLAY_WIDTH, DISPLAY_HEIGHT)
     screensaver_tab_index = tab_manager.get_tab_index("Screensaver")
     touch_state = _reset_touch_state()
+    screensaver_touch_state = _reset_screensaver_touch_state()
     
     # Graceful shutdown handler
     def cleanup(signum, frame):
@@ -100,9 +108,18 @@ def main():
 
             if tab_manager.current_tab == screensaver_tab_index:
                 if touched:
-                    tab_manager.current_tab = 0
-                    last_touch_time = current_time
-                    touch_state = _reset_touch_state()
+                    # Require a 3-second hold to exit screensaver
+                    if screensaver_touch_state["touched_at"] is None:
+                        screensaver_touch_state["touched_at"] = current_time
+                    
+                    hold_duration = current_time - screensaver_touch_state["touched_at"]
+                    if hold_duration >= SCREENSAVER_EXIT_HOLD_SECONDS:
+                        tab_manager.current_tab = 0
+                        last_touch_time = current_time
+                        touch_state = _reset_touch_state()
+                        screensaver_touch_state = _reset_screensaver_touch_state()
+                else:
+                    screensaver_touch_state = _reset_screensaver_touch_state()
             else:
                 if touched:
                     if current_time - last_touch_time > touch_debounce:
